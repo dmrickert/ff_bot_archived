@@ -4,3 +4,8 @@ exports.sh
 run
 build/
 dist/
+src/
+lib/
+bin/
+pip-selfcheck.json
+pyvenv.cfg
