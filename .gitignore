@@ -9,3 +9,4 @@ lib/
 bin/
 pip-selfcheck.json
 pyvenv.cfg
+dougs-config
