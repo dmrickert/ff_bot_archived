@@ -11,6 +11,9 @@ class GroupMeException(Exception):
 class SlackException(Exception):
     pass
 
+class DiscordException(Exception):
+    pass
+
 class GroupMeBot(object):
     #Creates GroupMe Bot to send messages
     def __init__(self, bot_id):
@@ -29,7 +32,7 @@ class GroupMeBot(object):
 
         headers = {'content-type': 'application/json'}
 
-        if self.bot_id != "1":
+        if self.bot_id not in (1, "1", ''):
             r = requests.post("https://api.groupme.com/v3/bots/post",
                               data=json.dumps(template), headers=headers)
             if r.status_code != 202:
@@ -54,12 +57,38 @@ class SlackBot(object):
 
         headers = {'content-type': 'application/json'}
 
-        if self.webhook_url != "1":
+        if self.webhook_url not in (1, "1", ''):
             r = requests.post(self.webhook_url,
                               data=json.dumps(template), headers=headers)
 
             if r.status_code != 200:
                 raise SlackException('WEBHOOK_URL')
+
+            return r
+
+class DiscordBot(object):
+    #Creates Discord Bot to send messages
+    def __init__(self, webhook_url):
+        self.webhook_url = webhook_url
+
+    def __repr__(self):
+        return "Discord Webhook Url(%s)" % self.webhook_url
+
+    def send_message(self, text):
+        #Sends a message to the chatroom
+        message = "```{0}```".format(text)
+        template = {
+                    "content":message
+                    }
+
+        headers = {'content-type': 'application/json'}
+
+        if self.webhook_url not in (1, "1", ''):
+            r = requests.post(self.webhook_url,
+                              data=json.dumps(template), headers=headers)
+
+            if r.status_code != 204:
+                raise DiscordException('WEBHOOK_URL')
 
             return r
 
@@ -203,9 +232,14 @@ def bot_main(function):
         bot_id = 1
 
     try:
-        webhook_url = os.environ["WEBHOOK_URL"]
+        slack_webhook_url = os.environ["SLACK_WEBHOOK_URL"]
     except KeyError:
-        webhook_url = 1
+        slack_webhook_url = 1
+
+    try:
+        discord_webhook_url = os.environ["DISCORD_WEBHOOK_URL"]
+    except KeyError:
+        discord_webhook_url = 1
 
     league_id = os.environ["LEAGUE_ID"]
 
@@ -225,7 +259,8 @@ def bot_main(function):
         password = 1
 
     bot = GroupMeBot(bot_id)
-    slack_bot = SlackBot(webhook_url)
+    slack_bot = SlackBot(slack_webhook_url)
+    discord_bot = DiscordBot(discord_webhook_url)
 
     if username != 1 and password != 1:
         espn_auth = ESPNFF(username, password)
@@ -246,31 +281,38 @@ def bot_main(function):
         #bot.send_message(get_trophies(league))
         bot.send_message("test complete")
         slack_bot.send_message("test complete")
+        discord_bot.send_message("test complete")
 
     if function=="get_matchups":
         text = get_matchups(league)
         bot.send_message(text)
         slack_bot.send_message(text)
+        discord_bot.send_message(text)
     elif function=="get_scoreboard":
         text = get_scoreboard(league)
         bot.send_message(text)
         slack_bot.send_message(text)
+        discord_bot.send_message(text)
     elif function=="get_scoreboard_short":
         text = get_scoreboard_short(league)
         bot.send_message(text)
         slack_bot.send_message(text)
+        discord_bot.send_message(text)
     elif function=="get_close_scores":
         text = get_close_scores(league)
         bot.send_message(text)
         slack_bot.send_message(text)
+        discord_bot.send_message(text)
     elif function=="get_power_rankings":
         text = get_power_rankings(league)
         bot.send_message(text)
         slack_bot.send_message(text)
+        discord_bot.send_message(text)
     elif function=="get_trophies":
         text = get_trophies(league)
         bot.send_message(text)
         slack_bot.send_message(text)
+        discord_bot.send_message(text)
     elif function=="get_final":
         text = "Final " + get_scoreboard_short(league, True)
         text = text + "\n\n" + get_trophies(league)
@@ -279,11 +321,14 @@ def bot_main(function):
         else:
             bot.send_message(text)
             slack_bot.send_message(text)
+            discord_bot.send_message(text)
     elif function=="init":
         try:
             text = os.environ["INIT_MSG"]
-            bot.send_message(text)
-            slack_bot.send_message(text)
+            if text != '':
+                bot.send_message(text)
+                slack_bot.send_message(text)
+                discord_bot.send_message(text)
         except KeyError:
             #do nothing here, empty init message
             pass
@@ -291,6 +336,7 @@ def bot_main(function):
         text = "Something happened. HALP"
         bot.send_message(text)
         slack_bot.send_message(text)
+        discord_bot.send_message(text)
 
 
 if __name__ == '__main__':
