@@ -1,4 +1,4 @@
 flake8==3.3.0
 apscheduler>=3.3.0
 requests>=2.0.0,<3.0.0
--e git://github.com/fgblomqvist/espnff.git#egg=espnff
+-e git://github.com/dmrickert/espnff.git#egg=espnff
